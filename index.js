@@ -19,15 +19,6 @@
 //     - Name
 //     - City
 
-// fetching state from the server
-fetch(`https://api.openbrewerydb.org/breweries`)
-  .then(function (response) {
-    return response.json()
-  })
-  .then(function (breweries) {
-    state.breweries = breweries
-    createsMainElements()
-  });
 
 const state = {
   breweries: [],
@@ -41,6 +32,12 @@ const state = {
 
 
 const pageDisplayEl = document.querySelector(".list-results")
+const whatStateForm = document.querySelector("#select-state-form")
+whatStateForm.addEventListener("submit", function (event) {
+  event.preventDefault()
+  const userInput = whatStateForm["select-state"].value
+  fetchBreweriesFromState(userInput)
+})
 
 const searchFilterEl = document.createElement("aside")
 const searchResultHeading = document.createElement("h1")
@@ -53,60 +50,116 @@ const breweryListEL = document.createElement("ul")
 breweryListEL.classList.add("breweries-list")
 
 
-// input: none
-// action: creates the child elements of the main block of the body
-// output: undefined
-function createsMainElements () {
-  pageDisplayEl.append(searchFilterEl, searchResultHeading, searchBarHeader, listContainerEl)
-  listContainerEl.append(breweryListEL)
-  const breweryEl = createBreweryItem ()
-  breweryListEL.append(breweryEl)
-  const searchBarFormEl = createsForm()
-  searchBarHeader.append(searchBarFormEl)
-}
 
 // input: none
 // action: creates the form inside the header
 // output: the form
 function createsForm () {
+  searchBarHeader.innerHTML = ""
   const searchBarFormEl = document.createElement("form")
   searchBarFormEl.setAttribute("id", "search-breweries-form")
   searchBarFormEl.setAttribute("autocomplete", "off")
-
+  
   const formLabel = document.createElement("label")
   formLabel.setAttribute("for", "search-breweries")
-
+  
   const labelText = document.createElement("h2")
   labelText.innerText = "Search breweries:"
-
+  
   formLabel.append(labelText)
-
+  
   const formInput = document.createElement("input")
   formInput.setAttribute("id", "search-breweries")
   formInput.setAttribute("name", "search-breweries")
   formInput.setAttribute("type", "text")
-
+  
   searchBarFormEl.append(formLabel, formInput)
-
+  
   return searchBarFormEl
 }
 
 // input: an item from the array state.breweries
 // action: creates a brewery description
 // return: an element that describes a brewery
-function createBreweryItem () {
+function createBreweryItem (brewery) {
   const breweryEl = document.createElement("li")
-
+  
   const breweryName = document.createElement("h2")
-  breweryName.innerText = state.breweries[5].name
+  breweryName.innerText = brewery.name
   
   const breweryType = document.createElement("div")
   breweryType.classList.add("type")
-  breweryType.innerText = state.breweries[5].brewery_type
-
-  breweryEl.append(breweryName, breweryType)
-
+  breweryType.innerText = brewery.brewery_type
+  
+  const totalAddressInfo = document.createElement("section")
+  totalAddressInfo.classList.add("address")
+  
+  const addressHeading = document.createElement("h3")
+  addressHeading.innerText = "Address:"
+  
+  const streetInfo = document.createElement("p")
+  streetInfo.innerText = brewery.street
+  
+  const cityAndPostcode = document.createElement("p")
+  const cityAndPostcodeInfo = document.createElement("strong")
+  cityAndPostcodeInfo.innerText = `${brewery.city}, ${brewery.postal_code}`
+  cityAndPostcode.append(cityAndPostcodeInfo)
+  
+  totalAddressInfo.append(addressHeading, streetInfo, cityAndPostcode)
+  
+  
+  const phoneNoSection = document.createElement("section")
+  phoneNoSection.classList.add("phone")
+  
+  const phoneHeading = document.createElement("h3")
+  phoneHeading.innerText = "Phone:"
+  
+  const phoneInfo = document.createElement("p")
+  phoneInfo.innerText = brewery.phone
+  
+  phoneNoSection.append(phoneHeading, phoneInfo)
+  
+  const websiteSection = document.createElement("section")
+  websiteSection.classList.add("link")
+  
+  const websiteAnchorEl = document.createElement("a")
+  websiteAnchorEl.setAttribute("href", brewery.website_url)
+  websiteAnchorEl.setAttribute("target","_blank")
+  websiteAnchorEl.innerText = "Visit Website"
+  
+  websiteSection.append(websiteAnchorEl)
+  
+  breweryEl.append(breweryName, breweryType, totalAddressInfo, phoneNoSection, websiteSection)
+  
+  
   return breweryEl
 }
 
- 
+// input: none
+// action: creates the child elements of the main block of the body
+// output: undefined
+function createsMainElements () {
+  pageDisplayEl.append(searchFilterEl, searchResultHeading, searchBarHeader, listContainerEl)
+  listContainerEl.append(breweryListEL)
+  breweryListEL.innerHTML =""
+  for (const brewery of state.breweries) {
+    const breweryEl = createBreweryItem (brewery)
+    breweryListEL.append(breweryEl)
+  }
+  const searchBarFormEl = createsForm()
+  searchBarHeader.append(searchBarFormEl)
+}
+
+// fetching state from the server
+function fetchBreweriesFromState (USState) {
+  fetch(`https://api.openbrewerydb.org/breweries?by_state=${USState}&per_page=50`)
+    .then(function (response) {
+      return response.json()
+    })
+    .then(function (breweries) {
+      const filteredBreweryList = breweries.filter( newBreweries => newBreweries.brewery_type=== "regional" || newBreweries.brewery_type=== "micro"|| newBreweries.brewery_type=== "brewpub")
+      const condensedBreweryList = filteredBreweryList.slice(0, 10)
+      state.breweries = condensedBreweryList
+      createsMainElements()
+    });
+}
