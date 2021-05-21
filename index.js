@@ -29,6 +29,12 @@ const state = {
 // to get the info from the form: formEl.select-state.value
 // to match the state to the user query: state.breweries.filter( brewery => brewery.state === formEl.select-state.value )
 // if I want to limit the amount of returns from the array we loop like: (let i = 0, i < 10, i++)
+// to remove duplicates from an array this is a nice pattern: 
+// for (const arrayWithDuplicatesElement of arrayWithDuplicates) {
+//   if (!newArray.includes(arrayWithDuplicatesElement)) {
+//     newArray.push(arrayWithDuplicatesElement)
+//   }
+// }
 
 
 const pageDisplayEl = document.querySelector(".list-results")
@@ -39,7 +45,6 @@ whatStateForm.addEventListener("submit", function (event) {
   fetchBreweriesFromState(userInput)
 })
 
-const searchFilterEl = document.createElement("aside")
 const searchResultHeading = document.createElement("h1")
 searchResultHeading.classList.add("results-heading")
 searchResultHeading.innerText = "List of Breweries"
@@ -55,7 +60,7 @@ breweryListEL.classList.add("breweries-list")
 // action: creates the form inside the header
 // output: the form
 function createsForm () {
-  searchBarHeader.innerHTML = ""
+  // searchBarHeader.innerHTML = ""
   const searchBarFormEl = document.createElement("form")
   searchBarFormEl.setAttribute("id", "search-breweries-form")
   searchBarFormEl.setAttribute("autocomplete", "off")
@@ -135,13 +140,16 @@ function createBreweryItem (brewery) {
   return breweryEl
 }
 
+
 // input: none
 // action: creates the child elements of the main block of the body
 // output: undefined
 function createsMainElements () {
-  pageDisplayEl.append(searchFilterEl, searchResultHeading, searchBarHeader, listContainerEl)
+  pageDisplayEl.innerHTML = ""
+  console.log("I just ran")
+  pageDisplayEl.append(searchResultHeading, searchBarHeader, listContainerEl)
   listContainerEl.append(breweryListEL)
-  breweryListEL.innerHTML =""
+  // breweryListEL.innerHTML =""
   for (const brewery of state.breweries) {
     const breweryEl = createBreweryItem (brewery)
     breweryListEL.append(breweryEl)
@@ -153,7 +161,7 @@ function createsMainElements () {
 // fetching state from the server
 function fetchBreweriesFromState (USState) {
   fetch(`https://api.openbrewerydb.org/breweries?by_state=${USState}&per_page=50`)
-    .then(function (response) {
+    .then(function (response) { 
       return response.json()
     })
     .then(function (breweries) {
@@ -162,4 +170,43 @@ function fetchBreweriesFromState (USState) {
       state.breweries = condensedBreweryList
       createsMainElements()
     });
+}
+
+// input: likely to be some form of state data
+// action: will create filter elements
+// output: 
+function createsFilterSection () {
+  const searchFilterEl = document.createElement("aside")
+  searchFilterEl.classList.add("filters-section")
+
+    const filterByTypeHeading = document.createElement("h2")
+    filterByTypeHeading.innerText = "Filter By:"
+
+    const filterByTypeForm = document.createElement("form")
+    filterByTypeForm.setAttribute("id", "filter-by-type-form")
+    filterByTypeForm.setAttribute("autocompete", "off")
+
+      const filterByTypeLabel = document.createElement("label")
+      filterByTypeLabel.setAttribute("for", "filter-by-type")
+
+        const labelText = document.createElement("h3")
+        labelText.innerText = "Type of Brewery"
+
+      filterByTypeLabel.append(labelText)
+
+      const filterDropdown = document.createElement("select")
+      filterDropdown.setAttribute("name", "filter-by-type")
+      filterDropdown.setAttribute("id", "filter-by-type")
+
+        const defaultOption = document.createElement("option")
+        defaultOption.setAttribute()
+
+    const filterByCityHeading = document.createElement("div")
+    filterByCityHeading.classList.add("filter-by-city-heading")
+
+    const filterByCityForm = document.createElement("form")
+    filterByCityForm.setAttribute("id", "filter-by-city-form")
+
+  searchFilterEl.append(filterByTypeHeading, filterByTypeForm, filterByCityHeading, filterByCityForm)
+
 }
