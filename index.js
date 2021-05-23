@@ -22,6 +22,8 @@
 
 const state = {
   breweries: [],
+  breweryTypeFilter: "",
+  breweryCityFilter: []
 };
 
 
@@ -51,8 +53,7 @@ searchResultHeading.innerText = "List of Breweries"
 const searchBarHeader = document.createElement("header")
 searchBarHeader.classList.add("search-bar")
 const listContainerEl = document.createElement("article")
-const breweryListEL = document.createElement("ul")
-breweryListEL.classList.add("breweries-list")
+
 
 
 
@@ -60,7 +61,6 @@ breweryListEL.classList.add("breweries-list")
 // action: creates the form inside the header
 // output: the form
 function createsForm () {
-  // searchBarHeader.innerHTML = ""
   const searchBarFormEl = document.createElement("form")
   searchBarFormEl.setAttribute("id", "search-breweries-form")
   searchBarFormEl.setAttribute("autocomplete", "off")
@@ -141,19 +141,27 @@ function createBreweryItem (brewery) {
 }
 
 
-// input: none
+// input: the correct list of breweries
 // action: creates the child elements of the main block of the body
 // output: undefined
-function createsMainElements () {
-  pageDisplayEl.innerHTML = ""
-  console.log("I just ran")
+function createsMainElements (filteredBreweries) {
+  const searchBarHeader = document.createElement("header")
+  searchBarHeader.classList.add("search-bar")
+  
+  
+  const breweryListEL = document.createElement("ul")
+  breweryListEL.classList.add("breweries-list")
+  
+  listContainerEl.innerHTML = ""
   pageDisplayEl.append(searchResultHeading, searchBarHeader, listContainerEl)
+  
   listContainerEl.append(breweryListEL)
-  // breweryListEL.innerHTML =""
-  for (const brewery of state.breweries) {
+  
+  for (const brewery of filteredBreweries.slice(0, 10)) {
     const breweryEl = createBreweryItem (brewery)
     breweryListEL.append(breweryEl)
   }
+  
   const searchBarFormEl = createsForm()
   searchBarHeader.append(searchBarFormEl)
 }
@@ -166,15 +174,15 @@ function fetchBreweriesFromState (USState) {
     })
     .then(function (breweries) {
       const filteredBreweryList = breweries.filter( newBreweries => newBreweries.brewery_type=== "regional" || newBreweries.brewery_type=== "micro"|| newBreweries.brewery_type=== "brewpub")
-      const condensedBreweryList = filteredBreweryList.slice(0, 10)
-      state.breweries = condensedBreweryList
-      createsMainElements()
+      state.breweries = filteredBreweryList
+      createsMainElements(state.breweries)
+      createsFilterSection()
     });
 }
 
-// input: likely to be some form of state data
+// input: none 
 // action: will create filter elements
-// output: 
+// output: city filter form
 function createsFilterSection () {
   const searchFilterEl = document.createElement("aside")
   searchFilterEl.classList.add("filters-section")
@@ -197,16 +205,166 @@ function createsFilterSection () {
       const filterDropdown = document.createElement("select")
       filterDropdown.setAttribute("name", "filter-by-type")
       filterDropdown.setAttribute("id", "filter-by-type")
+      
+      const defaultOption = document.createElement("option")
+        defaultOption.setAttribute("value", "")
+        defaultOption.innerText = "Select a type..."
 
-        const defaultOption = document.createElement("option")
-        defaultOption.setAttribute()
+        defaultOption.addEventListener("click", function () {
+          state.breweryTypeFilter = filterDropdown.value
+          
+          if (state.breweryCityFilter.length >= 1) {
+            const filteredBreweries = state.breweries.filter( brewery => state.breweryCityFilter.includes(brewery.city))
+            createsMainElements(filteredBreweries)
+          }else {
+            createsMainElements(state.breweries)
+          }
+        })
+
+        const microOption = document.createElement("option")
+        microOption.setAttribute("value", "micro")
+        microOption.innerText = "Micro"
+
+        microOption.addEventListener("click", function () {
+          state.breweryTypeFilter = filterDropdown.value
+
+          typeMixedFilter()
+        })
+
+        const regionalOption = document.createElement("option")
+        regionalOption.setAttribute("value", "regional")
+        regionalOption.innerText = "Regional"
+        
+        regionalOption.addEventListener("click", function () {
+          state.breweryTypeFilter = filterDropdown.value
+
+          typeMixedFilter()
+        })
+
+        const brewpubOption = document.createElement("option")
+        brewpubOption.setAttribute("value", "brewpub")
+        brewpubOption.innerText = "Brewpub"
+        
+        brewpubOption.addEventListener("click", function () {
+          state.breweryTypeFilter = filterDropdown.value
+
+          typeMixedFilter()
+        })
+
+        filterDropdown.append(defaultOption, microOption, regionalOption, brewpubOption)
+        
+        state.breweryTypeFilter = filterDropdown.value
+        
+        filterByTypeForm.append(filterByTypeLabel, filterDropdown)
 
     const filterByCityHeading = document.createElement("div")
     filterByCityHeading.classList.add("filter-by-city-heading")
 
+      const filterByCityHeadingText = document.createElement("h3")
+      filterByCityHeadingText.innerText = "Cities"
+
+      const resetButton = document.createElement("button")
+      resetButton.classList.add("clear-all-btn")
+      resetButton.innerText = "clear all"
+
+      resetButton.addEventListener("click", function () {
+        for (const checkbox of filterByCityForm.childNodes) {
+          checkbox.checked = false
+        }
+        state.breweryCityFilter = []
+
+        if (state.breweryTypeFilter.length >= 1) {
+          let filteredBreweries = state.breweries.filter( brewery => brewery.brewery_type === state.breweryTypeFilter)
+          createsMainElements(filteredBreweries)
+        } else {
+          createsMainElements(state.breweries)
+        }
+      })
+
+      filterByCityHeading.append(filterByCityHeadingText, resetButton)
+
     const filterByCityForm = document.createElement("form")
     filterByCityForm.setAttribute("id", "filter-by-city-form")
 
+    const currentBreweryCityArrayWithDuplicates = state.breweries.map( brewery => brewery.city)
+    const currentBreweryCityArray = []
+    
+    for (const breweryCity of currentBreweryCityArrayWithDuplicates) {
+      if (!currentBreweryCityArray.includes(breweryCity)) {
+        currentBreweryCityArray.push(breweryCity)
+      }
+    }
+    
+    for (const breweryCity of currentBreweryCityArray.sort()) {
+      const cityCheckbox = document.createElement("input")
+      cityCheckbox.setAttribute("type", "checkbox")
+      cityCheckbox.setAttribute("name", breweryCity)
+      cityCheckbox.setAttribute("value", breweryCity)
+
+      cityCheckbox.addEventListener("click", function () {
+        if (state.breweryTypeFilter.length >= 1) {
+          let filteredBreweries = state.breweries.filter( brewery => brewery.brewery_type === state.breweryTypeFilter)
+          console.log(filteredBreweries)
+          if (!state.breweryCityFilter.includes(cityCheckbox.value)) {
+            state.breweryCityFilter.push(cityCheckbox.value)
+            filteredBreweries = filteredBreweries.filter( brewery => state.breweryCityFilter.includes(brewery.city))
+            console.log(filteredBreweries)
+            createsMainElements(filteredBreweries)
+          }else if (state.breweryCityFilter.includes(cityCheckbox.value)) {
+            const itemToRemoveIndex = state.breweryCityFilter.findIndex( city => city === cityCheckbox.value)
+            state.breweryCityFilter.splice(itemToRemoveIndex, 1)
+            filteredBreweries = filteredBreweries.filter( brewery => state.breweryCityFilter.includes(brewery.city))
+            if (state.breweryCityFilter.length >= 1) {
+              console.log(filteredBreweries)
+              createsMainElements(filteredBreweries)
+            } else {
+              filteredBreweries = state.breweries.filter( brewery => brewery.brewery_type === state.breweryTypeFilter)
+              createsMainElements(filteredBreweries)
+            }
+          }
+        } else {
+          if (!state.breweryCityFilter.includes(cityCheckbox.value)) {
+            state.breweryCityFilter.push(cityCheckbox.value)
+            const filteredBreweries = state.breweries.filter( brewery => state.breweryCityFilter.includes(brewery.city))
+            console.log(filteredBreweries)
+            createsMainElements(filteredBreweries)
+          }else if (state.breweryCityFilter.includes(cityCheckbox.value)) {
+            const itemToRemoveIndex = state.breweryCityFilter.findIndex( city => city === cityCheckbox.value)
+            state.breweryCityFilter.splice(itemToRemoveIndex, 1)
+            const filteredBreweries = state.breweries.filter( brewery => state.breweryCityFilter.includes(brewery.city))
+            if (state.breweryCityFilter.length >= 1) {
+              console.log(filteredBreweries)
+              createsMainElements(filteredBreweries)
+            } else {
+              console.log(filteredBreweries)
+              createsMainElements(state.breweries)
+            }
+          }
+        }
+      })
+
+      const cityLabel = document.createElement("label")
+      cityLabel.setAttribute("for", breweryCity)
+      cityLabel.innerText = breweryCity
+    
+      filterByCityForm.append(cityCheckbox, cityLabel)
+    }
+
   searchFilterEl.append(filterByTypeHeading, filterByTypeForm, filterByCityHeading, filterByCityForm)
 
+  pageDisplayEl.append(searchFilterEl)
+}
+
+function typeMixedFilter () {
+  if (state.breweryCityFilter.length >= 1) {
+    let filteredBreweries = state.breweries.filter( brewery => state.breweryCityFilter.includes(brewery.city))
+    console.log(filteredBreweries)
+    filteredBreweries = filteredBreweries.filter( brewery => brewery.brewery_type === state.breweryTypeFilter)
+    console.log(filteredBreweries)
+    createsMainElements(filteredBreweries)
+  } else {
+    const filteredBreweries = state.breweries.filter( brewery => brewery.brewery_type === state.breweryTypeFilter)
+    console.log(filteredBreweries)
+    createsMainElements(filteredBreweries)
+  }
 }
