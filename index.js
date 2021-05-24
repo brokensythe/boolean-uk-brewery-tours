@@ -23,7 +23,8 @@
 const state = {
   breweries: [],
   breweryTypeFilter: "",
-  breweryCityFilter: []
+  breweryCityFilter: [],
+  searchInfoFilter: ""
 };
 
 
@@ -77,9 +78,35 @@ function createsForm () {
   formInput.setAttribute("id", "search-breweries")
   formInput.setAttribute("name", "search-breweries")
   formInput.setAttribute("type", "text")
-  
   searchBarFormEl.append(formLabel, formInput)
+
+  searchBarFormEl.addEventListener("submit", function (event) {
+    event.preventDefault()
+
+    if (state.breweryTypeFilter.length < 1 && state.breweryCityFilter.length < 1) {
+      let filteredBreweries = state.breweries.filter( brewery => brewery.name.includes(searchBarFormEl["search-breweries"].value) )
   
+      createsMainElements(filteredBreweries)
+    } else if (state.breweryTypeFilter.length >= 1 && state.breweryCityFilter.length < 1) {
+      let filteredBreweries = state.breweries.filter( brewery => brewery.brewery_type === state.breweryTypeFilter)
+      filteredBreweries = filteredBreweries.filter( brewery => brewery.name.includes(searchBarFormEl["search-breweries"].value) )
+
+      createsMainElements(filteredBreweries)
+    }else if (state.breweryTypeFilter.length < 1 && state.breweryCityFilter.length >= 1) {
+      let filteredBreweries = state.breweries.filter( brewery => state.breweryCityFilter.includes(brewery.city) )
+      filteredBreweries = filteredBreweries.filter( brewery => brewery.name.includes(searchBarFormEl["search-breweries"].value) )
+
+      createsMainElements(filteredBreweries)
+    }else if (state.breweryTypeFilter.length >= 1 && state.breweryCityFilter.length >= 1) {
+      let filteredBreweries = state.breweries.filter( brewery => brewery.brewery_type === state.breweryTypeFilter)
+      filteredBreweries = filteredBreweries.filter( brewery => state.breweryCityFilter.includes(brewery.city) )
+      filteredBreweries = filteredBreweries.filter( brewery => brewery.name.includes(searchBarFormEl["search-breweries"].value) )
+
+      createsMainElements(filteredBreweries)
+    }
+  })
+  
+  console.log(Boolean(searchBarFormEl["search-breweries"].value))
   return searchBarFormEl
 }
 
